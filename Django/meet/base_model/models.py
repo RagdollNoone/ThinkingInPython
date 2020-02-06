@@ -8,7 +8,11 @@ class Room(models.Model):
     def __str__(self):
         return self.name
 
-    pass
+    def to_json(self):
+        from common.result import Result, RoomResult
+        ret = Result()
+        ret = RoomResult(ret, self)
+        return ret.get_ret()
 
 
 class Group(models.Model):
@@ -17,7 +21,11 @@ class Group(models.Model):
     def __str__(self):
         return self.name
 
-    pass
+    def to_json(self):
+        from common.result import Result, GroupResult
+        ret = Result()
+        ret = GroupResult(ret, self)
+        return ret.get_ret()
 
 
 class User(models.Model):
@@ -25,20 +33,16 @@ class User(models.Model):
     name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     # password = models.CharField(max_length=255)
-    group = models.OneToOneField(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
-    @staticmethod
-    def is_new_user(wechat_id):
-        try:
-            selected_user = User.Objects.get(pk=wechat_id)
-        except (KeyError, User.DoesNotExist):
-            return True
-        else:
-            return False  # 返回当前选中的人
-    pass
+    def to_json(self):
+        from common.result import Result, UserResult
+        ret = Result()
+        ret = UserResult(ret, self)
+        return ret.get_ret()
 
 
 class SuperUser(User):
@@ -46,8 +50,8 @@ class SuperUser(User):
 
 
 class Meet(models.Model):
-    organizer = models.OneToOneField(SuperUser, on_delete=models.CASCADE)
-    room = models.OneToOneField(Room, on_delete=models.CASCADE)
+    organizer = models.ManyToManyField(User)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
     subject = models.CharField(max_length=255)
     start = models.DateTimeField('meet start time')
     end = models.DateTimeField('meet end time')
@@ -55,17 +59,24 @@ class Meet(models.Model):
     def __str__(self):
         return self.subject
 
-    pass
+    def to_json(self):
+        from common.result import Result, MeetResult
+        ret = Result()
+        ret = MeetResult(ret, self)
+        return ret.get_ret()
 
 
 class Sign(models.Model):
-    meet = models.OneToOneField(Meet, on_delete=models.CASCADE)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    meet = models.ForeignKey(Meet, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     sign_state = models.IntegerField(default=0)
     sign_time = models.DateTimeField('sign time')
 
-    pass
+    def __str__(self):
+        return "Subject: %s, User: %s, SignState: %d, SignTime: %s" % (self.meet.subject, self.user.name, self.sign_state, self.sign_time)
 
-
-
-
+    def to_json(self):
+        from common.result import Result, SignResult
+        ret = Result()
+        ret = SignResult(ret, self)
+        return ret.get_ret()
