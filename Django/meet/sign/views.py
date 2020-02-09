@@ -1,11 +1,12 @@
 import os
 import sys
+import time
+import datetime
 
 from base_model.models import User, Group, Room, Meet, Sign
 from common.response import Response
 from common.signstate import SignState
 from common import utility
-from django.utils import timezone
 
 
 # Create your views here.
@@ -99,11 +100,11 @@ def sign(request):
                 new_sign = Sign()
                 new_sign.user = selected_user
                 new_sign.meet = selected_meet
-                if selected_meet.start < timezone.now():
-                    new_sign.sign_state = SignState.LATE
+                if selected_meet.start.strftime("%Y-%m-%d %H:%M:%S") < datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"):
+                    new_sign.sign_state = SignState.LATE.value[0]
                 else:
-                    new_sign.sign_state = SignState.SIGNED
-                new_sign.sign_time = timezone.now()
+                    new_sign.sign_state = SignState.SIGNED.value[0]
+                new_sign.sign_time = datetime.datetime.now()
                 new_sign.save()
 
                 header['error_code'] = 0
@@ -122,7 +123,7 @@ def get_user_today_meets(request):
         header = result.get_header()
         body = result.get_body()
 
-        date = timezone.now().date()
+        date = time.localtime().strftime("%Y-%m-%d")
         selected_user = User.objects.get(email=request.GET['email'])
         selected_meet_list = selected_user.meet_set.all()
         selected_meet_ret = []
@@ -167,7 +168,7 @@ def refuse_attend(request):
         selected_user = User.objects.get(email=request.GET['email'])
 
         selected_sign = Sign.objects.get(user=selected_user, meet=selected_meet)
-        selected_sign.sign_state = SignState.REFUSE
+        selected_sign.sign_state = SignState.REFUSE.value[0]
         selected_sign.save()
 
         header['error_code'] = 0
@@ -183,23 +184,22 @@ def add_new_user_attend(request):
         start_time = request.GET['start_time']
         selected_meet = utility.get_meet_by_room_and_start(room_name, start_time)
 
-        selected_user = User.objects.get(email=request.GET['email'])
+        selected_user = User.objects.get(wechat_id=request.GET['wechat_id'])
 
         result = Response()
         header = result.get_header()
         body = result.get_body()
 
         try:
-            selected_meet.organizer.all().get(wechat_id=selected_user.wechat_id)
+            selected_meet.participant.all().get(wechat_id=selected_user.wechat_id)
         except (KeyError, User.DoesNotExist):
-            selected_meet.organizer.add(selected_user)
+            selected_meet.participant.add(selected_user)
             selected_meet.save()
 
             new_sign = Sign()
-            new_sign.save(commit=False)
             new_sign.meet = selected_meet
             new_sign.user = selected_user
-            new_sign.sign_state = SignState.SIGNED
+            new_sign.sign_state = SignState.SIGNED.value[0]
             new_sign.sign_time = selected_meet.start
             new_sign.save()
 
@@ -208,25 +208,25 @@ def add_new_user_attend(request):
             body['meet'] = selected_meet.to_json()
             body['sign'] = new_sign.to_json()
             return result.construct_json_response()
-        else:
-            try:
-                selected_sign = Sign.objects.get(user=selected_user, meet=selected_meet)
-            except (KeyError, Sign.DoesNotExist):
-                header['error_code'] = -1
-                header['status'] = 'Add new user can not add sign record for exist user'
-                return result.construct_json_response()
-            else:
-                if selected_sign.sign_state == SignState.REFUSE:
-                    selected_sign.sign_state = SignState.SIGNED
 
-                    header['error_code'] = 0
-                    header['status'] = 'Add new user success for existent user'
-                    body['sign'] = selected_sign.to_json()
-                    return result.construct_json_response()
+        try:
+            selected_sign = Sign.objects.get(user=selected_user, meet=selected_meet)
+        except (KeyError, Sign.DoesNotExist):
+            header['error_code'] = -1
+            header['status'] = 'Add new user can not add sign record for exist user'
+            return result.construct_json_response()
 
-                header['error_code'] = -1
-                header['status'] = 'Add new user can not modify sign record for exist user'
-                return result.construct_json_response()
+        if selected_sign.sign_state == SignState.REFUSE.value[0]:
+            selected_sign.sign_state = SignState.SIGNED.value[0]
+
+            header['error_code'] = 0
+            header['status'] = 'Add new user success for existent user'
+            body['sign'] = selected_sign.to_json()
+            return result.construct_json_response()
+
+        header['error_code'] = -1
+        header['status'] = 'Add new user can not modify sign record for exist user'
+        return result.construct_json_response()
 
 
 def get_detail_groups(request):

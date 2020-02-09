@@ -62,11 +62,12 @@ class MeetResult(Result):
         ret['start'] = str(self.__meeting_record.start.strftime("%H:%M:%S"))
         ret['end'] = str(self.__meeting_record.end.strftime("%H:%M:%S"))
         ret['room'] = self.__meeting_record.room.to_json()
-        organizer_list = self.__meeting_record.organizer.all()
-        organizer_ret = []
-        for organizer in organizer_list:
-            organizer_ret.append(organizer.to_json())
-        ret['organizer'] = organizer_ret
+        ret['organizer'] = self.__meeting_record.organizer.to_json()
+        participant_list = self.__meeting_record.participant.all()
+        participant_ret = []
+        for participant in participant_list:
+            participant_ret.append(participant.to_json())
+        ret['participant'] = participant_ret
 
         return ret
 

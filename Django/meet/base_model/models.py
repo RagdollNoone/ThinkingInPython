@@ -45,12 +45,9 @@ class User(models.Model):
         return ret.get_ret()
 
 
-class SuperUser(User):
-    pass
-
-
 class Meet(models.Model):
-    organizer = models.ManyToManyField(User)
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE)
+    participant = models.ManyToManyField(User)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     subject = models.CharField(max_length=255)
     start = models.DateTimeField('meet start time')

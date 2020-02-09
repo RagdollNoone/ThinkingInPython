@@ -1,11 +1,12 @@
 import datetime
+import time
 
-from django.utils import timezone
 from base_model.models import User, Group, Room, Meet, Sign
 from common.signstate import SignState
-from common.result import Result, SignResult, MeetResult
 
 
+# 当前房间连着两场会议
+# 且第一场会议只有半小时该怎么办
 def find_meet_by_room(room_name):
     try:
         selected_room = Room.objects.get(name=room_name)
@@ -16,12 +17,13 @@ def find_meet_by_room(room_name):
     if len(selected_meet_list) == 0:
         return None
     else:
-        now = timezone.now()
-        start = datetime.timedelta(minutes=30)
-        end = datetime.timedelta(minutes=10)
+        now = datetime.datetime.now()
+        start = (now - datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        end = (now + datetime.timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")
 
         for selected_meet in selected_meet_list:
-            if (selected_meet.start - now) > start and (now - selected_meet.start) > end:
+            meet_start_time = selected_meet.start.strftime("%Y-%m-%d %H:%M:%S")
+            if start <= meet_start_time <= end:
                 return selected_meet
 
         return None
@@ -55,11 +57,11 @@ def get_sign_statistics(room_name, start_time):
             selected_sign_ret.append(selected_sign.to_json())
             sign_state = selected_sign.sign_state
 
-            if sign_state == SignState.MISS:
+            if sign_state == SignState.MISS.value[0]:
                 miss_sign_number += 1
-            elif sign_state == SignState.SIGNED:
+            elif sign_state == SignState.SIGNED.value[0]:
                 sign_number += 1
-            elif sign_state == SignState.LATE:
+            elif sign_state == SignState.LATE.value[0]:
                 late_sign_number += 1
 
         total_sign_number = sign_number + miss_sign_number + late_sign_number
