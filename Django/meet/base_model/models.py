@@ -46,8 +46,8 @@ class User(models.Model):
 
 
 class Meet(models.Model):
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE)
-    participant = models.ManyToManyField(User)
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organizer')
+    participant = models.ManyToManyField(User, related_name='participant')
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     subject = models.CharField(max_length=255)
     start = models.DateTimeField('meet start time')
