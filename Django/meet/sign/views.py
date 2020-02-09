@@ -85,7 +85,7 @@ def sign(request):
         header = result.get_header()
         body = result.get_body()
 
-        selected_user = User.objects.get(email=request.POST['email'])
+        selected_user = User.objects.get(wechat_id=request.POST['wechat_id'])
         selected_meet = utility.find_meet_by_room(request.POST['room'])
 
         if selected_meet is None:
@@ -97,10 +97,12 @@ def sign(request):
                 selected_sign = Sign.objects.get(meet=selected_meet, user=selected_user)
             except (KeyError, Sign.DoesNotExist):
                 new_sign = Sign()
-                new_sign.save(commit=False)
                 new_sign.user = selected_user
                 new_sign.meet = selected_meet
-                new_sign.sign_state = SignState.SIGNED
+                if selected_meet.start < timezone.now():
+                    new_sign.sign_state = SignState.LATE
+                else:
+                    new_sign.sign_state = SignState.SIGNED
                 new_sign.sign_time = timezone.now()
                 new_sign.save()
 
@@ -108,14 +110,10 @@ def sign(request):
                 header['status'] = 'Set SignState.SIGNED success'
                 body['sign'] = new_sign.to_json()
                 return result.construct_json_response()
-            else:
-                selected_sign.sign_state = SignState.REFUSE
-                selected_sign.save()
 
-                header['error_code'] = 0
-                header['status'] = 'Set SignState.REFUSE success'
-                body['sign'] = selected_sign.to_json()
-                return result.construct_json_response()
+            header['error_code'] = -1
+            header['status'] = 'Sign fail, sign record has existed'
+            return result.construct_json_response()
 
 
 def get_user_today_meets(request):
