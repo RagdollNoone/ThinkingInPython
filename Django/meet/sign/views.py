@@ -42,13 +42,13 @@ def is_new_user(request):
 
         body = result.get_body()
     try:
-        selected_user = User.Objects.get(wechat_id=wechat_id)
+        selected_user = User.objects.get(wechat_id=wechat_id)
     except (KeyError, User.DoesNotExist):
         header['status'] = 'NotExist'
         return result.construct_json_response()
-    else:
-        header['status'] = 'Exist'
-        body['user'] = selected_user.to_json()
+
+    header['status'] = 'Exist'
+    body['user'] = selected_user.to_json()
 
     return result.construct_json_response()
 
@@ -59,14 +59,17 @@ def add_user(request):
         header = result.get_header()
         body = result.get_body()
 
-        group = Group()
-        group.name = request.POST['group']
+        try:
+            selected_group = Group.objects.get(name=request.POST['group'])
+        except (KeyError, Group.DoesNotExist):
+            header['error_code'] = -1
+            header['status'] = 'Add user fail, please post a correct group name'
+            return result.construct_json_response()
 
         new_user = User()
-        new_user.save(commit=False)
         new_user.wechat_id = request.POST['wechat_id']
-        new_user.email = request.POST['wechat_id']
-        new_user.group = group
+        new_user.email = request.POST['email']
+        new_user.group = selected_group
         new_user.save()
 
         header['error_code'] = 0
@@ -238,7 +241,7 @@ def get_detail_groups(request):
         for selected_group in Group.objects.all():
             temp_ret = selected_group.to_json()
             temp_ret['user'] = []
-            for selected_user in User.obejcts.get(group__name=selected_group.name):
+            for selected_user in User.objects.filter(group__name=selected_group.name):
                 temp_ret['user'].append(selected_user.to_json())
             body['group'].append(temp_ret)
 
