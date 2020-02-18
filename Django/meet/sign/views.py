@@ -100,7 +100,7 @@ def sign(request):
                 new_sign = Sign()
                 new_sign.user = selected_user
                 new_sign.meet = selected_meet
-                if selected_meet.start.strftime("%Y-%m-%d %H:%M:%S") < datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"):
+                if selected_meet.start.strftime("%Y-%m-%d %H:%M:%S") < datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'):
                     new_sign.sign_state = SignState.LATE.value[0]
                 else:
                     new_sign.sign_state = SignState.SIGNED.value[0]
@@ -123,17 +123,24 @@ def get_user_today_meets(request):
         header = result.get_header()
         body = result.get_body()
 
-        date = time.localtime().strftime("%Y-%m-%d")
-        selected_user = User.objects.get(email=request.GET['email'])
-        selected_meet_list = selected_user.meet_set.all()
-        selected_meet_ret = []
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
+        selected_user = User.objects.get(wechat_id=request.GET['wechat_id'])
+        selected_meet_list = Meet.objects.filter(participant=selected_user)
+        meet_list_ret = []
         for selected_meet in selected_meet_list:
             if selected_meet.start.strftime("%Y-%m-%d") == date:
-                selected_meet_ret.append(selected_meet.to_json())
+                temp_ret = selected_meet.to_json()
+                try:
+                    selected_sign = Sign.objects.get(meet=selected_meet, user=selected_user)
+                except (KeyError, Sign.DoesNotExist):
+                    temp_ret['sign_time'] = '--:--:--'
+
+                temp_ret['sign_time'] = selected_sign.sign_time.strftime('%H:%M:%S')
+                meet_list_ret.append(temp_ret)
 
         header['error_code'] = 0
         header['status'] = 'Get user today meets success'
-        body['meet'] = selected_meet_ret
+        body['meet_record'] = meet_list_ret
 
         return result.construct_json_response()
 
