@@ -144,7 +144,7 @@ def get_sign_statistics(request):
         header = result.get_header()
         body = result.get_body()
 
-        room_name = request.GET['room_name']
+        room_name = request.GET['room']
         start_time = request.GET['start_time']
         statistics_ret = utility.get_sign_statistics(room_name, start_time)
 

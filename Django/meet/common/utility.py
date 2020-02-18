@@ -33,7 +33,7 @@ def get_meet_by_room_and_start(room_name, start_time):
     selected_meet_list = Meet.objects.filter(room__name=room_name)
 
     for selected_meet in selected_meet_list:
-        if selected_meet.start.strftime("%Y-%m-%d") == start_time:
+        if selected_meet.start.strftime("%H:%M:%S") == start_time:
             return selected_meet
 
     return None

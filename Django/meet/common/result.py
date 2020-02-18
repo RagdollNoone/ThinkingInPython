@@ -111,23 +111,9 @@ class GroupResult(Result):
                   " CORRECT RESULT: " + is_result +
                   " CORRECT GROUP RECORD: " + is_group_record)
 
-    # def __get_group_user_statistics__(self):
-    #     ret = []
-    #     user_list = User.Objects.filter(group__name=self.__group_record.name).all()
-    #
-    #     for user in user_list:
-    #         result = Result()
-    #         result = UserResult(result, user)
-    #         ret.append(copy.copy(result.get_ret()))
-    #
-    #     return ret
-
     def get_ret(self):
         ret = copy.copy(self.__result.get_ret())
-
         ret['name'] = self.__group_record.name
-        # ret['user_list'] = self.__get_group_user_statistics__()
-
         return ret
 
 
