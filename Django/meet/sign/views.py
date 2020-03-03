@@ -168,11 +168,11 @@ def refuse_attend(request):
         header = result.get_header()
         body = result.get_body()
 
-        room_name = request.GET['room_name']
-        start_time = request.GET['start_time']
+        room_name = request.POST['room_name']
+        start_time = request.POST['start_time']
         selected_meet = utility.get_meet_by_room_and_start(room_name, start_time)
 
-        selected_user = User.objects.get(email=request.GET['email'])
+        selected_user = User.objects.get(wechat_id=request.POST['wechat_id'])
 
         selected_sign = Sign.objects.get(user=selected_user, meet=selected_meet)
         selected_sign.sign_state = SignState.REFUSE.value[0]
@@ -187,11 +187,11 @@ def refuse_attend(request):
 
 def add_new_user_attend(request):
     if request.method == 'POST':
-        room_name = request.GET['room_name']
-        start_time = request.GET['start_time']
+        room_name = request.POST['room_name']
+        start_time = request.POST['start_time']
         selected_meet = utility.get_meet_by_room_and_start(room_name, start_time)
 
-        selected_user = User.objects.get(wechat_id=request.GET['wechat_id'])
+        selected_user = User.objects.get(wechat_id=request.POST['wechat_id'])
 
         result = Response()
         header = result.get_header()
